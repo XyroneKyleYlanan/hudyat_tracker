@@ -10,11 +10,29 @@ class EventService {
     required String name,
     required String description,
     required DateTime eventDate,
+    String? eventTime,
   }) async {
     await ApiService.post('events/create.php', {
       'name': name,
       'description': description,
       'event_date': eventDate.toIso8601String().split('T')[0],
+      if (eventTime != null) 'event_time': eventTime,
+    });
+  }
+
+  Future<void> updateEvent({
+    required String id,
+    required String name,
+    required String description,
+    required DateTime eventDate,
+    String? eventTime,
+  }) async {
+    await ApiService.post('events/update.php', {
+      'id': id,
+      'name': name,
+      'description': description,
+      'event_date': eventDate.toIso8601String().split('T')[0],
+      if (eventTime != null) 'event_time': eventTime,
     });
   }
 

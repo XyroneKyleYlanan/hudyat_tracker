@@ -25,8 +25,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Future<void> _load() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final data = await _service.getAllPerformance();
-      if (mounted) setState(() { _performance = data; _isLoading = false; });
+      final data = await _service.getAllPerformance(period: 'this_school_year');
+      if (mounted) {
+        setState(() {
+          _performance = data;
+          _isLoading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() { _error = 'Could not connect to server.\nCheck your connection and try again.'; _isLoading = false; });
     }

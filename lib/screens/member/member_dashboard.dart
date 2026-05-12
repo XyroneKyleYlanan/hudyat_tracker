@@ -126,12 +126,125 @@ class _MemberHomeState extends State<_MemberHome> {
     }
   }
 
+  void _showChangePasswordSheet(BuildContext context) {
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool obscureCurrent = true;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    String? errorMsg;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
+          decoration: const BoxDecoration(
+            color: HudyatColors.card,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.only(
+            left: 24, right: 24, top: 12,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: HudyatColors.divider, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 20),
+                const Text('Change Password', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: HudyatColors.textPrimary, letterSpacing: -0.3)),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: currentCtrl,
+                  obscureText: obscureCurrent,
+                  style: const TextStyle(color: HudyatColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Current Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(obscureCurrent ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: HudyatColors.textSecondary, size: 18),
+                      onPressed: () => setSheetState(() => obscureCurrent = !obscureCurrent),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: newCtrl,
+                  obscureText: obscureNew,
+                  style: const TextStyle(color: HudyatColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(obscureNew ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: HudyatColors.textSecondary, size: 18),
+                      onPressed: () => setSheetState(() => obscureNew = !obscureNew),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: confirmCtrl,
+                  obscureText: obscureConfirm,
+                  style: const TextStyle(color: HudyatColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Confirm New Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(obscureConfirm ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: HudyatColors.textSecondary, size: 18),
+                      onPressed: () => setSheetState(() => obscureConfirm = !obscureConfirm),
+                    ),
+                  ),
+                ),
+                if (errorMsg != null) ...[
+                  const SizedBox(height: 10),
+                  Text(errorMsg!, style: const TextStyle(color: HudyatColors.accent, fontSize: 13)),
+                ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (currentCtrl.text.isEmpty || newCtrl.text.isEmpty || confirmCtrl.text.isEmpty) {
+                        setSheetState(() => errorMsg = 'All fields are required');
+                        return;
+                      }
+                      if (newCtrl.text != confirmCtrl.text) {
+                        setSheetState(() => errorMsg = 'New passwords do not match');
+                        return;
+                      }
+                      if (newCtrl.text.length < 6) {
+                        setSheetState(() => errorMsg = 'New password must be at least 6 characters');
+                        return;
+                      }
+                      final result = await _service.changePassword(
+                        currentPassword: currentCtrl.text,
+                        newPassword: newCtrl.text,
+                      );
+                      if (result['message'] != null && ctx.mounted) {
+                        Navigator.pop(ctx);
+                      } else {
+                        setSheetState(() => errorMsg = result['error'] ?? 'Failed to change password');
+                      }
+                    },
+                    child: const Text('Change Password'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final name = auth.profile?['full_name'] ?? 'Member';
     final totalDuties = _perf == null ? '—' : '${_perf!['total_duties'] ?? 0}';
-    final avgMonth = _perf == null ? '—' : '${double.tryParse(_perf!['avg_duties_per_month'].toString())?.toStringAsFixed(1) ?? '0'}';
+    final eventCoverage = _perf == null ? '—' : '${_perf!['events_attended'] ?? 0}/${_perf!['total_events'] ?? 0}';
 
     return Scaffold(
       body: SafeArea(
@@ -168,7 +281,22 @@ class _MemberHomeState extends State<_MemberHome> {
               ),
               actions: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 16, top: 8),
+                  padding: const EdgeInsets.only(top: 8),
+                  child: GestureDetector(
+                    onTap: () => _showChangePasswordSheet(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: HudyatColors.card,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: HudyatColors.divider),
+                      ),
+                      child: const Icon(Icons.key_rounded, color: HudyatColors.textSecondary, size: 20),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 16, top: 8, left: 8),
                   child: GestureDetector(
                     onTap: _confirmLogout,
                     child: Container(
@@ -220,7 +348,7 @@ class _MemberHomeState extends State<_MemberHome> {
                         children: [
                           _StatBox(label: 'Total Duties', value: totalDuties, icon: Icons.assignment_rounded, color: HudyatColors.accent),
                           const SizedBox(width: 12),
-                          _StatBox(label: 'Avg / Month', value: avgMonth, icon: Icons.calendar_today_rounded, color: HudyatColors.success),
+                          _StatBox(label: 'Event Coverage', value: eventCoverage, icon: Icons.event_available_rounded, color: HudyatColors.success),
                         ],
                       ),
                     ),
@@ -529,8 +657,8 @@ class _MyPerformanceState extends State<_MyPerformance> {
                                 ),
                                 const SizedBox(width: 12),
                                 _PerfStat(
-                                  label: 'Avg / Month',
-                                  value: '${_performance!['avg_duties_per_month'] ?? 0}',
+                                  label: 'Event Coverage',
+                                  value: '${_performance!['events_attended'] ?? 0}/${_performance!['total_events'] ?? 0}',
                                   color: HudyatColors.success,
                                 ),
                               ],

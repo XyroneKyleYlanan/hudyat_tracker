@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../main.dart';
+import '../../providers/duty_provider.dart';
+import '../../providers/event_provider.dart';
 import '../../services/duty_service.dart';
 
 class MembersScreen extends StatefulWidget {
@@ -34,8 +37,11 @@ class _MembersScreenState extends State<MembersScreen> {
   }
 
   List<Map<String, dynamic>> get _filtered {
-    if (_searchQuery.isEmpty) return _members;
-    return _members.where((m) {
+    var list = _showInactive
+        ? _members.where((m) => m['is_active'].toString() != '1').toList()
+        : _members;
+    if (_searchQuery.isEmpty) return list;
+    return list.where((m) {
       final name = (m['full_name'] as String? ?? '').toLowerCase();
       final id = (m['student_id'] as String? ?? '').toLowerCase();
       final course = (m['course'] as String? ?? '').toLowerCase();
@@ -177,7 +183,7 @@ class _MembersScreenState extends State<MembersScreen> {
                   obscureText: obscure,
                   style: const TextStyle(color: HudyatColors.textPrimary),
                   decoration: InputDecoration(
-                    labelText: 'Password *',
+                    labelText: 'Temporary Password *',
                     suffixIcon: IconButton(
                       icon: Icon(obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: HudyatColors.textSecondary, size: 18),
                       onPressed: () => setSheetState(() => obscure = !obscure),
@@ -433,6 +439,183 @@ class _MembersScreenState extends State<MembersScreen> {
     );
   }
 
+  void _showAssignDutySheet(Map<String, dynamic> member) {
+    final memberId = member['id'].toString();
+    final memberName = member['full_name'] as String? ?? 'Unknown';
+
+    String? selectedEventId;
+    String? selectedEventName;
+    final roleController = TextEditingController();
+    final notesController = TextEditingController();
+    String? errorMsg;
+
+    final dutyProvider = context.read<DutyProvider>();
+    final eventProvider = context.read<EventProvider>();
+    if (eventProvider.events.isEmpty) eventProvider.loadEvents();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          void pickEvent() {
+            final searchCtrl = TextEditingController();
+            showDialog(
+              context: ctx,
+              builder: (_) => StatefulBuilder(
+                builder: (dlgCtx, setDlg) {
+                  final q = searchCtrl.text.toLowerCase();
+                  final visible = eventProvider.events.where((e) {
+                    final n = (e['name'] as String? ?? '').toLowerCase();
+                    return q.isEmpty || n.contains(q);
+                  }).toList();
+                  return AlertDialog(
+                    backgroundColor: HudyatColors.card,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    title: const Text('Select Event', style: TextStyle(color: HudyatColors.textPrimary, fontWeight: FontWeight.w700)),
+                    content: SizedBox(
+                      width: double.maxFinite,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: searchCtrl,
+                            onChanged: (_) => setDlg(() {}),
+                            decoration: const InputDecoration(
+                              hintText: 'Search events…',
+                              prefixIcon: Icon(Icons.search_rounded, size: 18),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Flexible(
+                            child: ListView(
+                              shrinkWrap: true,
+                              children: visible.map((e) => ListTile(
+                                title: Text(e['name'] ?? '', style: const TextStyle(color: HudyatColors.textPrimary, fontSize: 14)),
+                                subtitle: Text(e['event_date'] ?? '', style: const TextStyle(color: HudyatColors.textSecondary, fontSize: 12)),
+                                onTap: () {
+                                  setSheetState(() {
+                                    selectedEventId = e['id'].toString();
+                                    selectedEventName = e['name'] as String? ?? '';
+                                  });
+                                  Navigator.pop(dlgCtx);
+                                },
+                              )).toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          }
+
+          return Container(
+            decoration: const BoxDecoration(
+              color: HudyatColors.card,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: EdgeInsets.only(
+              left: 24, right: 24, top: 12,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: HudyatColors.divider, borderRadius: BorderRadius.circular(2)))),
+                  const SizedBox(height: 20),
+                  const Text('Assign Duty', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: HudyatColors.textPrimary, letterSpacing: -0.3)),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(color: HudyatColors.cardElevated, borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person_rounded, color: HudyatColors.textSecondary, size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(memberName, style: const TextStyle(color: HudyatColors.textPrimary, fontWeight: FontWeight.w600))),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(color: HudyatColors.accent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                          child: const Text('Pre-filled', style: TextStyle(color: HudyatColors.accent, fontSize: 10, fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: pickEvent,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(color: HudyatColors.cardElevated, borderRadius: BorderRadius.circular(12)),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              selectedEventName ?? 'Select Event',
+                              style: TextStyle(color: selectedEventName != null ? HudyatColors.textPrimary : HudyatColors.textSecondary),
+                            ),
+                          ),
+                          const Icon(Icons.keyboard_arrow_down_rounded, color: HudyatColors.textSecondary, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: roleController,
+                    style: const TextStyle(color: HudyatColors.textPrimary),
+                    decoration: const InputDecoration(
+                      labelText: 'Role Assigned',
+                      hintText: 'e.g. Photographer, Videographer, etc.',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesController,
+                    style: const TextStyle(color: HudyatColors.textPrimary),
+                    decoration: const InputDecoration(labelText: 'Notes (optional)'),
+                    maxLines: 2,
+                  ),
+                  if (errorMsg != null) ...[
+                    const SizedBox(height: 10),
+                    Text(errorMsg!, style: const TextStyle(color: HudyatColors.accent, fontSize: 13)),
+                  ],
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (selectedEventId == null || roleController.text.isEmpty) {
+                          setSheetState(() => errorMsg = 'Please select an event and enter a role');
+                          return;
+                        }
+                        final success = await dutyProvider.logDuty(
+                          memberId: memberId,
+                          eventId: selectedEventId!,
+                          roleAssigned: roleController.text.trim(),
+                          notes: notesController.text.trim(),
+                        );
+                        if (success && ctx.mounted) Navigator.pop(ctx);
+                      },
+                      child: const Text('Log Duty'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Color _avatarColor(String name) {
     const colors = [
       Color(0xFF5C6BC0), Color(0xFF26A69A), Color(0xFFEF6C00),
@@ -466,7 +649,9 @@ class _MembersScreenState extends State<MembersScreen> {
                       ),
                       if (!_isLoading)
                         Text(
-                          '${_members.length} total',
+                          _showInactive
+                              ? '${_filtered.length} deactivated'
+                              : '${_members.length} total',
                           style: const TextStyle(color: HudyatColors.textSecondary, fontSize: 13),
                         ),
                     ],
@@ -653,6 +838,20 @@ class _MembersScreenState extends State<MembersScreen> {
                                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: roleColor),
                                         ),
                                       ),
+                                    if (isActive) ...[
+                                      const SizedBox(width: 6),
+                                      GestureDetector(
+                                        onTap: () => _showAssignDutySheet(member),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(7),
+                                          decoration: BoxDecoration(
+                                            color: HudyatColors.accent.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: const Icon(Icons.add_task_rounded, color: HudyatColors.accent, size: 17),
+                                        ),
+                                      ),
+                                    ],
                                     PopupMenuButton<String>(
                                       onSelected: (value) async {
                                         if (value == 'edit') {
@@ -920,8 +1119,8 @@ class _MemberProfileSheetState extends State<_MemberProfileSheet> {
                               ),
                               const SizedBox(width: 10),
                               _PerfCard(
-                                label: 'Avg / Month',
-                                value: '${double.tryParse(_perf!['avg_duties_per_month'].toString())?.toStringAsFixed(1) ?? '0'}',
+                                label: 'Event Coverage',
+                                value: '${_perf!['events_attended'] ?? 0}/${_perf!['total_events'] ?? 0}',
                                 color: HudyatColors.success,
                               ),
                             ],

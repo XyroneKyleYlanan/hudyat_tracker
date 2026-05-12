@@ -139,4 +139,15 @@ class DutyService {
     });
     return Map<String, dynamic>.from(response);
   }
+
+  Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await ApiService.post('auth/change_password.php', {
+      'current_password': currentPassword,
+      'new_password': newPassword,
+    });
+    return Map<String, dynamic>.from(response);
+  }
 }

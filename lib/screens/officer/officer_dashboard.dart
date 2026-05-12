@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../main.dart';
 import '../admin/events_screen.dart';
-import '../admin/duties_screen.dart';
 import '../admin/analytics_screen.dart';
 
 class OfficerDashboard extends StatefulWidget {
@@ -19,7 +18,6 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   late final List<Widget> _screens = [
     _OfficerHome(onNavigate: (i) => setState(() => _currentIndex = i)),
     const EventsScreen(),
-    const DutiesScreen(),
     const AnalyticsScreen(),
   ];
 
@@ -42,7 +40,6 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             items: const [
               BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
               BottomNavigationBarItem(icon: Icon(Icons.calendar_month_rounded), label: 'Events'),
-              BottomNavigationBarItem(icon: Icon(Icons.assignment_rounded), label: 'Duties'),
               BottomNavigationBarItem(icon: Icon(Icons.bar_chart_rounded), label: 'Analytics'),
             ],
           ),
@@ -173,40 +170,7 @@ class _OfficerHome extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    const Text(
-                      'Quick Actions',
-                      style: TextStyle(
-                        color: HudyatColors.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _OfficerActionCard(
-                      icon: Icons.calendar_month_rounded,
-                      label: 'Manage Events',
-                      subtitle: 'Create and track organization events',
-                      color: HudyatColors.success,
-                      onTap: () => onNavigate(1),
-                    ),
-                    const SizedBox(height: 10),
-                    _OfficerActionCard(
-                      icon: Icons.assignment_rounded,
-                      label: 'Log Duties',
-                      subtitle: 'Record member duties per event',
-                      color: HudyatColors.accent,
-                      onTap: () => onNavigate(2),
-                    ),
-                    const SizedBox(height: 10),
-                    _OfficerActionCard(
-                      icon: Icons.bar_chart_rounded,
-                      label: 'View Analytics',
-                      subtitle: 'Member performance and leaderboard',
-                      color: HudyatColors.gold,
-                      onTap: () => onNavigate(3),
-                    ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -218,71 +182,3 @@ class _OfficerHome extends StatelessWidget {
   }
 }
 
-class _OfficerActionCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _OfficerActionCard({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: HudyatColors.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: HudyatColors.divider),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: HudyatColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: HudyatColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded,
-                color: HudyatColors.textSecondary, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-}

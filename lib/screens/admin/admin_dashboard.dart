@@ -4,7 +4,6 @@ import '../../providers/auth_provider.dart';
 import '../../services/duty_service.dart';
 import '../../main.dart';
 import 'events_screen.dart';
-import 'duties_screen.dart';
 import 'members_screen.dart';
 import 'analytics_screen.dart';
 
@@ -22,7 +21,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _AdminHome(onNavigate: (i) => setState(() => _currentIndex = i)),
     const MembersScreen(),
     const EventsScreen(),
-    const DutiesScreen(),
     const AnalyticsScreen(),
   ];
 
@@ -46,7 +44,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
               BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
               BottomNavigationBarItem(icon: Icon(Icons.people_rounded), label: 'Members'),
               BottomNavigationBarItem(icon: Icon(Icons.calendar_month_rounded), label: 'Events'),
-              BottomNavigationBarItem(icon: Icon(Icons.assignment_rounded), label: 'Duties'),
               BottomNavigationBarItem(icon: Icon(Icons.bar_chart_rounded), label: 'Analytics'),
             ],
           ),
@@ -222,17 +219,7 @@ class _AdminHomeState extends State<_AdminHome> {
                     ),
                     const SizedBox(height: 28),
 
-                    // Quick actions
-                    const Text('Quick Actions', style: TextStyle(color: HudyatColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1)),
-                    const SizedBox(height: 12),
-                    _ActionCard(icon: Icons.people_rounded, label: 'Manage Members', subtitle: 'Add, view, and manage all members', color: Colors.blueAccent, onTap: () => widget.onNavigate(1)),
-                    const SizedBox(height: 10),
-                    _ActionCard(icon: Icons.calendar_month_rounded, label: 'Manage Events', subtitle: 'Create and track organization events', color: HudyatColors.success, onTap: () => widget.onNavigate(2)),
-                    const SizedBox(height: 10),
-                    _ActionCard(icon: Icons.assignment_rounded, label: 'Log Duties', subtitle: 'Record member duties per event', color: HudyatColors.accent, onTap: () => widget.onNavigate(3)),
-                    const SizedBox(height: 10),
-                    _ActionCard(icon: Icons.bar_chart_rounded, label: 'View Reports', subtitle: 'Analytics and performance summaries', color: HudyatColors.gold, onTap: () => widget.onNavigate(4)),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -277,48 +264,3 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ActionCard({required this.icon, required this.label, required this.subtitle, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: HudyatColors.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: HudyatColors.divider),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: const TextStyle(color: HudyatColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 15)),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(color: HudyatColors.textSecondary, fontSize: 12)),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: HudyatColors.textSecondary, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-}

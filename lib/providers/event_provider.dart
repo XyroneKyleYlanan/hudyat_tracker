@@ -31,17 +31,43 @@ class EventProvider extends ChangeNotifier {
     required String name,
     required String description,
     required DateTime eventDate,
+    String? eventTime,
   }) async {
     try {
       await _service.createEvent(
         name: name,
         description: description,
         eventDate: eventDate,
+        eventTime: eventTime,
       );
       await loadEvents();
       return true;
     } catch (e) {
       _errorMessage = 'Failed to create event.';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateEvent({
+    required String id,
+    required String name,
+    required String description,
+    required DateTime eventDate,
+    String? eventTime,
+  }) async {
+    try {
+      await _service.updateEvent(
+        id: id,
+        name: name,
+        description: description,
+        eventDate: eventDate,
+        eventTime: eventTime,
+      );
+      await loadEvents();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Failed to update event.';
       notifyListeners();
       return false;
     }
